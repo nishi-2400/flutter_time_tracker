@@ -5,11 +5,15 @@ import 'package:flutter_time_tracker/common_widgets/custom_raised_button.dart';
 import 'package:flutter_time_tracker/common_widgets/sign_in_button.dart';
 
 class SignInPage extends StatelessWidget {
+  // コンストラクタ
+  const SignInPage({Key? key, required this.onSignIn}) : super(key: key);
+  final void Function(User) onSignIn;
+
   // Login Anonymously
   Future<void> _signInAnonymously() async {
     try {
       final userCredentials = await FirebaseAuth.instance.signInAnonymously();
-      print('${userCredentials.user?.uid}');
+      onSignIn(userCredentials.user!);
     } catch (e) {
       print(e.toString());
     }
