@@ -8,11 +8,16 @@ abstract class AuthBase {
   Future<User?> signInAnonymously();
   // ログアウト
   Future<void> signOut();
+  // ログイン状態を管理するストリーム
+  Stream<User?> authStateChanges();
 }
 
 // FireBaseを使った処理を実装
 class Auth implements AuthBase {
   final _firebaseAuth = FirebaseAuth.instance;
+
+  @override
+  Stream<User?> authStateChanges() => _firebaseAuth.authStateChanges();
 
   @override
   User? get currentUser => _firebaseAuth.currentUser;

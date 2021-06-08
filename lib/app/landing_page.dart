@@ -29,16 +29,34 @@ class _LandingPageState extends State<LandingPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_user == null) {
-      return SignInPage(
-          auth: widget.auth,
-          onSignIn: _updateUser,
-      );
-    } else {
-      return HomePage(
-        auth: widget.auth,
-        onSignOut: () => _updateUser(null),
-      );
-    }
+    return StreamBuilder<User?>(
+      // 監視するのストリームをセット(ログイン状況をListenするFirebaseのStream)
+      stream: widget.auth.authStateChanges(),
+      // snapshot : イベントにより送信されたデータ関連のプロパティを
+      builder: (context, snapshot) {
+        // connectionState : 通信状況を取得
+        if (snapshot.connectionState == ConnectionState.active) {
+          final User? user = snapshot.data;
+          print(user?.uid);
+          if (user == null) {
+            return SignInPage(
+              auth: widget.auth,
+              onSignIn: _updateUser,
+            );
+          } else {
+            return HomePage(
+              auth: widget.auth,
+              onSignOut: () => _updateUser(null),
+            );
+          }
+        }
+        return Scaffold(
+          body: Center(
+            // CircularProgressIndicator : 通信中のインジケータを表示
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
+    );
   }
 }
