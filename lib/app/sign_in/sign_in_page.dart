@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_time_tracker/app/sign_in/social_sing_in_button.dart';
 import 'package:flutter_time_tracker/common_widgets/sign_in_button.dart';
@@ -6,15 +5,22 @@ import 'package:flutter_time_tracker/services/auth.dart';
 
 class SignInPage extends StatelessWidget {
   // コンストラクタ
-  const SignInPage({Key? key, required this.auth, required this.onSignIn}) : super(key: key);
+  const SignInPage({Key? key, required this.auth}) : super(key: key);
   final AuthBase auth;
-  final void Function(User) onSignIn;
 
-  // Login Anonymously
+  // 匿名ログイン
   Future<void> _signInAnonymously() async {
     try {
-      final user = await auth.signInAnonymously();
-      onSignIn(user!);
+      await auth.signInAnonymously();
+    } catch (e) {
+      print(e.toString());
+    }
+  }
+
+  // Googleログイン
+  Future<void> _signInWithGoogle() async {
+    try {
+      await auth.signInWithGoogle();
     } catch (e) {
       print(e.toString());
     }
@@ -51,7 +57,7 @@ class SignInPage extends StatelessWidget {
             assetName: 'images/google-logo.png',
             textColor: Colors.black87,
             color: Colors.white,
-            onPressed: () {},
+            onPressed: _signInWithGoogle,
           ),
           SizedBox(height: 8.0),
           SocialSignInButton(
@@ -72,10 +78,7 @@ class SignInPage extends StatelessWidget {
           Text(
             'Or',
             textAlign: TextAlign.center,
-            style: TextStyle(
-                fontSize: 14.0,
-                color: Colors.black87
-            ),
+            style: TextStyle(fontSize: 14.0, color: Colors.black87),
           ),
           SizedBox(height: 8.0),
           SignInButton(
@@ -88,5 +91,4 @@ class SignInPage extends StatelessWidget {
       ),
     );
   }
-  
 }
