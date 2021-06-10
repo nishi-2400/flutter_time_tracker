@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Flutter Time Tracker</string>
+    <string name="facebook_app_id">321131479668629</string>
+    <string name="fb_login_protocol_scheme">fb321131479668629</string>
+</resources>
