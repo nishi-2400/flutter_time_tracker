@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_time_tracker/app/sign_in/email_sign_in_page.dart';
 import 'package:flutter_time_tracker/app/sign_in/social_sing_in_button.dart';
 import 'package:flutter_time_tracker/common_widgets/sign_in_button.dart';
 import 'package:flutter_time_tracker/services/auth.dart';
@@ -35,6 +36,16 @@ class SignInPage extends StatelessWidget {
     }
   }
 
+  // Emailサインインページへナビゲーション
+  void _signInWithEmail(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => EmailSignInPage(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,12 +53,12 @@ class SignInPage extends StatelessWidget {
         title: Text('Time Tracker App'),
         elevation: 10,
       ),
-      body: _buildContent(),
+      body: _buildContent(context),
       backgroundColor: Colors.grey[100],
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     return Padding(
       // child配下のwidgetのpaddingを指定
       padding: EdgeInsets.all(16.0),
@@ -81,7 +92,7 @@ class SignInPage extends StatelessWidget {
             text: 'Sign in with Email',
             textColor: Colors.white,
             color: Colors.teal,
-            onPressed: () {},
+            onPressed: () => _signInWithEmail(context),
           ),
           SizedBox(height: 8.0),
           Text(
