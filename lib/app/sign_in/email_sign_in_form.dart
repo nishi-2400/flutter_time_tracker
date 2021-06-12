@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_time_tracker/app/sign_in/validators.dart';
 import 'package:flutter_time_tracker/common_widgets/form_submit_button.dart';
 import 'package:flutter_time_tracker/services/auth.dart';
 
 // フォームタイプを管理
 enum EmailSignInFormType { signIn, register }
 
-class EmailSignInForm extends StatefulWidget {
-  const EmailSignInForm({required this.auth});
+// with で mixin
+class EmailSignInForm extends StatefulWidget with EmailAndPasswordValidators {
+  EmailSignInForm({required this.auth});
+
   final AuthBase auth;
 
   @override
@@ -26,6 +29,7 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
 
   // メールアドレスとパスワードのゲッター
   String get _email => _emailController.text;
+
   String get _password => _passwordController.text;
 
   // フォームのサブミット
@@ -39,7 +43,6 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
 
       // Emailサインインページをpop-
       Navigator.of(context).pop();
-
     } catch (e) {
       print(e.toString());
     }
@@ -52,8 +55,9 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
   // ステートの制御
   void _toggleFormType() {
     setState(() {
-      _formType = _formType == EmailSignInFormType.signIn ?
-          EmailSignInFormType.register : EmailSignInFormType.signIn;
+      _formType = _formType == EmailSignInFormType.signIn
+          ? EmailSignInFormType.register
+          : EmailSignInFormType.signIn;
     });
 
     _emailController.clear();
@@ -62,17 +66,23 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
 
   List<Widget> _buildChildren() {
     // ボタンの表示内容の制御
-    final primaryText = _formType == EmailSignInFormType.signIn ?
-    'Sign in' : 'Create an account';
-    final secondaryText = _formType == EmailSignInFormType.signIn ?
-    'Need an account? Register' : 'Have an account? Sign In';
+    final primaryText = _formType == EmailSignInFormType.signIn
+        ? 'Sign in'
+        : 'Create an account';
+    final secondaryText = _formType == EmailSignInFormType.signIn
+        ? 'Need an account? Register'
+        : 'Have an account? Sign In';
+    // submitボタンの制御
+    bool submitEnabled = widget.emailValidator.isValid(_email) &&
+        widget.passwordValidator.isValid(_password);
 
     return [
       _buildEmailTextField(),
       SizedBox(height: 8.0),
       _buildPasswordTextField(),
       SizedBox(height: 8.0),
-      FormSubmitButton(text: primaryText, onPressed: _submit),
+      FormSubmitButton(
+          text: primaryText, onPressed: submitEnabled ? _submit : null),
       SizedBox(height: 8.0),
       // フォームタイプの切り替え
       FlatButton(
@@ -83,20 +93,24 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
   }
 
   TextField _buildPasswordTextField() {
+    bool passwordValid = widget.passwordValidator.isValid(_password);
     return TextField(
       controller: _passwordController,
       focusNode: _passwordFocusNode,
       obscureText: true,
       onEditingComplete: _submit,
       decoration: InputDecoration(
-        labelText: 'Password',
+          labelText: 'Password',
+          errorText: passwordValid ? null : widget.invalidPasswordErrorText,
       ),
       // エンターキーの変更
       textInputAction: TextInputAction.done,
+      onChanged: (password) => _updateState(),
     );
   }
 
   TextField _buildEmailTextField() {
+    bool emailValid = widget.emailValidator.isValid(_email);
     return TextField(
       controller: _emailController,
       focusNode: _emailFocusNode,
@@ -104,6 +118,7 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
       decoration: InputDecoration(
         labelText: 'Email',
         hintText: 'test@test.com',
+        errorText: emailValid ? null : widget.invalidEmailErrorText,
       ),
       // 予測変換を表示しない。
       autocorrect: false,
@@ -111,6 +126,7 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
       keyboardType: TextInputType.emailAddress,
       // エンターキーの変更
       textInputAction: TextInputAction.next,
+      onChanged: (email) => _updateState(),
     );
   }
 
@@ -124,5 +140,9 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
         children: _buildChildren(),
       ),
     );
+  }
+
+  void _updateState() {
+    setState(() {});
   }
 }
