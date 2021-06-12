@@ -16,8 +16,13 @@ abstract class AuthBase {
   // Facebookログイン
   Future<User?> signInWithFacebook();
 
+  //Emailログイン
+  Future<User?> signInWithEmail(String email, String password);
+
   // ログアウト
   Future<void> signOut();
+
+  Future<User?> createUserWithEmailAndPassword(String email, String password);
 
   // ログイン状態を管理するストリーム
   Stream<User?> authStateChanges();
@@ -37,6 +42,14 @@ class Auth implements AuthBase {
   @override
   Future<User?> signInAnonymously() async {
     final userCredentials = await _firebaseAuth.signInAnonymously();
+    return userCredentials.user;
+  }
+
+  // Emailログイン
+  Future<User?> signInWithEmail(String email, String password) async {
+    final userCredentials = await _firebaseAuth.signInWithCredential(
+      EmailAuthProvider.credential(email: email, password: password),
+    );
     return userCredentials.user;
   }
 
@@ -97,9 +110,18 @@ class Auth implements AuthBase {
     }
   }
 
+  //　アカウント登録
+  @override
+  Future<User?> createUserWithEmailAndPassword(String email,
+      String password) async {
+    final userCredentials = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email, password: password);
+    return userCredentials.user;
+  }
+
   @override
   Future<void> signOut() async {
-    // Googlログアウト
+    // Googleログアウト
     final googleSignIn = GoogleSignIn();
     await googleSignIn.signOut();
     // Facebookログアウト
@@ -107,7 +129,5 @@ class Auth implements AuthBase {
     await facebookLogin.logOut();
 
     await _firebaseAuth.signOut();
-
-
   }
 }
