@@ -32,8 +32,18 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
 
   String get _password => _passwordController.text;
 
+  // バリデーションエラー表示制御
+  bool _submitted = false;
+
+  // Firebaseの処理状態 - TextFieldの制御
+  bool _isLoading = false;
+
   // フォームのサブミット
   void _submit() async {
+    setState(() {
+      _submitted = true;
+      _isLoading = true;
+    });
     try {
       if (_formType == EmailSignInFormType.signIn) {
         await widget.auth.signInWithEmail(_email, _password);
@@ -45,16 +55,25 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
       Navigator.of(context).pop();
     } catch (e) {
       print(e.toString());
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
+  // フォーカスの制御
   void _emailEditingComplete() {
-    FocusScope.of(context).requestFocus(_passwordFocusNode);
+    final newFocus = widget.emailValidator.isValid(_email)
+        ? _passwordFocusNode
+        : _emailFocusNode;
+    FocusScope.of(context).requestFocus(newFocus);
   }
 
   // ステートの制御
   void _toggleFormType() {
     setState(() {
+      _submitted = false;
       _formType = _formType == EmailSignInFormType.signIn
           ? EmailSignInFormType.register
           : EmailSignInFormType.signIn;
@@ -74,7 +93,8 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
         : 'Have an account? Sign In';
     // submitボタンの制御
     bool submitEnabled = widget.emailValidator.isValid(_email) &&
-        widget.passwordValidator.isValid(_password);
+        widget.passwordValidator.isValid(_password) &&
+        !_isLoading;
 
     return [
       _buildEmailTextField(),
@@ -86,22 +106,24 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
       SizedBox(height: 8.0),
       // フォームタイプの切り替え
       FlatButton(
-        onPressed: _toggleFormType,
+        onPressed: _isLoading ? null : _toggleFormType,
         child: Text(secondaryText),
       ),
     ];
   }
 
   TextField _buildPasswordTextField() {
-    bool passwordValid = widget.passwordValidator.isValid(_password);
+    bool showErrorText =
+        _submitted && !widget.passwordValidator.isValid(_password);
     return TextField(
       controller: _passwordController,
       focusNode: _passwordFocusNode,
       obscureText: true,
       onEditingComplete: _submit,
       decoration: InputDecoration(
-          labelText: 'Password',
-          errorText: passwordValid ? null : widget.invalidPasswordErrorText,
+        labelText: 'Password',
+        errorText: showErrorText ? widget.invalidPasswordErrorText : null,
+        enabled: _isLoading == false,
       ),
       // エンターキーの変更
       textInputAction: TextInputAction.done,
@@ -110,7 +132,7 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
   }
 
   TextField _buildEmailTextField() {
-    bool emailValid = widget.emailValidator.isValid(_email);
+    bool showErrorText = _submitted && !widget.emailValidator.isValid(_email);
     return TextField(
       controller: _emailController,
       focusNode: _emailFocusNode,
@@ -118,7 +140,8 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
       decoration: InputDecoration(
         labelText: 'Email',
         hintText: 'test@test.com',
-        errorText: emailValid ? null : widget.invalidEmailErrorText,
+        errorText: showErrorText ? widget.invalidEmailErrorText : null,
+        enabled: _isLoading == false,
       ),
       // 予測変換を表示しない。
       autocorrect: false,

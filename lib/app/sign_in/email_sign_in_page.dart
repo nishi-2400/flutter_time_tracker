@@ -12,10 +12,12 @@ class EmailSignInPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('Sign in with email'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Card(
-          child: EmailSignInForm(auth: auth),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Card(
+            child: EmailSignInForm(auth: auth),
+          ),
         ),
       ),
       backgroundColor: Colors.grey[200],
