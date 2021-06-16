@@ -7,7 +7,7 @@ class SocialSignInButton extends CustomRaisedButton {
     required String text,
     required Color textColor,
     required Color color,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
   })  : assert(text != null),
         assert(assetName != null),
         super(

@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_time_tracker/app/sign_in/validators.dart';
 import 'package:flutter_time_tracker/common_widgets/form_submit_button.dart';
-import 'package:flutter_time_tracker/common_widgets/show_alert_dialog.dart';
 import 'package:flutter_time_tracker/common_widgets/show_exception_alert_dialog.dart';
 import 'package:flutter_time_tracker/services/auth.dart';
 import 'package:provider/provider.dart';
@@ -37,6 +36,19 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
 
   // Firebaseの処理状態 - TextFieldの制御
   bool _isLoading = false;
+
+
+  // ウィジェットが破棄される際に呼ばれるメソッド
+  @override
+  void dispose(){
+    // 不要な一次データを削除しておく
+    _emailController.dispose();
+    _passwordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    // widgetをdispose()で破棄
+    super.dispose();
+  }
 
   // フォームのサブミット
   void _submit() async {

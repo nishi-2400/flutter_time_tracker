@@ -6,7 +6,7 @@ class SignInButton extends CustomRaisedButton {
     required String text,
     required Color textColor,
     required Color color,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
   })  : assert(text != null),
         super(
           child: Text(
