@@ -19,7 +19,8 @@ class LandingPage extends StatelessWidget {
           final User? user = snapshot.data;
           print(user?.uid);
           if (user == null) {
-            return SignInPage();
+            // サインイン関連の状態を管理するProviderを生成
+            return SignInPage.create(context);
           } else {
             return HomePage();
           }
