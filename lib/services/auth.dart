@@ -55,7 +55,7 @@ class Auth implements AuthBase {
 
   // Googleログイン
   @override
-  Future<UserCredential?> signInWithGoogle() async {
+  Future<UserCredential> signInWithGoogle() async {
     final googleSignIn = GoogleSignIn();
     final googleUser = await googleSignIn.signIn();
     if (googleUser != null) {

@@ -10,12 +10,12 @@ import 'package:provider/provider.dart';
 enum EmailSignInFormType { signIn, register }
 
 // with で mixin
-class EmailSignInForm extends StatefulWidget with EmailAndPasswordValidators {
+class EmailSignInStateful extends StatefulWidget with EmailAndPasswordValidators {
   @override
-  _EmailSignInFormState createState() => _EmailSignInFormState();
+  _EmailSignInStatefulState createState() => _EmailSignInStatefulState();
 }
 
-class _EmailSignInFormState extends State<EmailSignInForm> {
+class _EmailSignInStatefulState extends State<EmailSignInStateful> {
   // TextFieldの値を管理するコントローラー
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
