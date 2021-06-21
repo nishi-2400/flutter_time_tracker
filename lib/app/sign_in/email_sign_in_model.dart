@@ -26,6 +26,7 @@ class EmailSignInModel {
     return EmailSignInModel(
       email: email ?? this.email,
       password: password ?? this.password,
+      formType: formType ?? this.formType,
       isLoading: isLoading ?? this.isLoading,
       submitted: submitted ?? this.submitted,
     );
