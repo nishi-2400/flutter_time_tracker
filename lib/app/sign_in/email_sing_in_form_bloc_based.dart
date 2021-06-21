@@ -1,21 +1,35 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_time_tracker/app/sign_in/email_sign_in_bloc.dart';
+import 'package:flutter_time_tracker/app/sign_in/email_sign_in_model.dart';
 import 'package:flutter_time_tracker/app/sign_in/validators.dart';
 import 'package:flutter_time_tracker/common_widgets/form_submit_button.dart';
 import 'package:flutter_time_tracker/common_widgets/show_exception_alert_dialog.dart';
 import 'package:flutter_time_tracker/services/auth.dart';
 import 'package:provider/provider.dart';
 
-// フォームタイプを管理
-enum EmailSignInFormType { signIn, register }
-
 // with で mixin
-class EmailSignInStateful extends StatefulWidget with EmailAndPasswordValidators {
+class EmailSignInBlocBased extends StatefulWidget
+    with EmailAndPasswordValidators {
+  EmailSignInBlocBased({Key? key, required this.bloc}) : super(key: key);
+  final EmailSignInBloc bloc;
+
+  static Widget create(BuildContext context) {
+    final auth = Provider.of<AuthBase>(context, listen: false);
+    return Provider<EmailSignInBloc>(
+      create: (_) => EmailSignInBloc(auth: auth),
+      child: Consumer<EmailSignInBloc>(
+        builder: (_, bloc, __) => EmailSignInBlocBased(bloc: bloc),
+      ),
+      dispose: (_, bloc) => bloc.dispose(),
+    );
+  }
+
   @override
-  _EmailSignInStatefulState createState() => _EmailSignInStatefulState();
+  _EmailSignInBlocBasedState createState() => _EmailSignInBlocBasedState();
 }
 
-class _EmailSignInStatefulState extends State<EmailSignInStateful> {
+class _EmailSignInBlocBasedState extends State<EmailSignInBlocBased> {
   // TextFieldの値を管理するコントローラー
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -23,24 +37,9 @@ class _EmailSignInStatefulState extends State<EmailSignInStateful> {
   final FocusNode _emailFocusNode = FocusNode();
   final FocusNode _passwordFocusNode = FocusNode();
 
-  // デフォルトのフォームタイプを”signIn”にセットしておく
-  EmailSignInFormType _formType = EmailSignInFormType.signIn;
-
-  // メールアドレスとパスワードのゲッター
-  String get _email => _emailController.text;
-
-  String get _password => _passwordController.text;
-
-  // バリデーションエラー表示制御
-  bool _submitted = false;
-
-  // Firebaseの処理状態 - TextFieldの制御
-  bool _isLoading = false;
-
-
   // ウィジェットが破棄される際に呼ばれるメソッド
   @override
-  void dispose(){
+  void dispose() {
     // 不要な一次データを削除しておく
     _emailController.dispose();
     _passwordController.dispose();
@@ -52,18 +51,8 @@ class _EmailSignInStatefulState extends State<EmailSignInStateful> {
 
   // フォームのサブミット
   Future<void> _submit() async {
-    setState(() {
-      _submitted = true;
-      _isLoading = true;
-    });
     try {
-      final auth = Provider.of<AuthBase>(context, listen: false);
-      if (_formType == EmailSignInFormType.signIn) {
-        await auth.signInWithEmail(_email, _password);
-      } else {
-        await auth.createUserWithEmailAndPassword(_email, _password);
-      }
-
+      await widget.bloc.submit();
       // Emailサインインページをpop-
       Navigator.of(context).pop();
     } on FirebaseAuthException catch (e) {
@@ -72,66 +61,65 @@ class _EmailSignInStatefulState extends State<EmailSignInStateful> {
         title: 'Sign in failed',
         exception: e,
       );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
   // フォーカスの制御
-  void _emailEditingComplete() {
-    final newFocus = widget.emailValidator.isValid(_email)
+  void _emailEditingComplete(EmailSignInModel model) {
+    final newFocus = widget.emailValidator.isValid(model.email!)
         ? _passwordFocusNode
         : _emailFocusNode;
     FocusScope.of(context).requestFocus(newFocus);
   }
 
   // ステートの制御
-  void _toggleFormType() {
-    setState(() {
-      _submitted = false;
-      _formType = _formType == EmailSignInFormType.signIn
+  void _toggleFormType(EmailSignInModel model) {
+    widget.bloc.updateWith(
+      email: '',
+      password: '',
+      formType: model.formType == EmailSignInFormType.signIn
           ? EmailSignInFormType.register
-          : EmailSignInFormType.signIn;
-    });
+          : EmailSignInFormType.signIn,
+      isLoading: false,
+      submitted: false,
+    );
 
     _emailController.clear();
     _passwordController.clear();
   }
 
-  List<Widget> _buildChildren() {
+  List<Widget> _buildChildren(EmailSignInModel model) {
     // ボタンの表示内容の制御
-    final primaryText = _formType == EmailSignInFormType.signIn
+    final primaryText = model.formType == EmailSignInFormType.signIn
         ? 'Sign in'
         : 'Create an account';
-    final secondaryText = _formType == EmailSignInFormType.signIn
+    final secondaryText = model.formType == EmailSignInFormType.signIn
         ? 'Need an account? Register'
         : 'Have an account? Sign In';
     // submitボタンの制御
-    bool submitEnabled = widget.emailValidator.isValid(_email) &&
-        widget.passwordValidator.isValid(_password) &&
-        !_isLoading;
+    bool submitEnabled = widget.emailValidator.isValid(model.email!) &&
+        widget.passwordValidator.isValid(model.password!) &&
+        !model.isLoading!;
 
     return [
-      _buildEmailTextField(),
+      _buildEmailTextField(model),
       SizedBox(height: 8.0),
-      _buildPasswordTextField(),
+      _buildPasswordTextField(model),
       SizedBox(height: 8.0),
       FormSubmitButton(
           text: primaryText, onPressed: submitEnabled ? _submit : null),
       SizedBox(height: 8.0),
       // フォームタイプの切り替え
       FlatButton(
-        onPressed: _isLoading ? null : _toggleFormType,
+        onPressed: !model.isLoading! ? () => _toggleFormType(model) : null,
         child: Text(secondaryText),
       ),
     ];
   }
 
-  TextField _buildPasswordTextField() {
+  TextField _buildPasswordTextField(EmailSignInModel model) {
     bool showErrorText =
-        _submitted && !widget.passwordValidator.isValid(_password);
+        model.submitted! && !widget.passwordValidator.isValid(model.password!);
     return TextField(
       controller: _passwordController,
       focusNode: _passwordFocusNode,
@@ -140,25 +128,26 @@ class _EmailSignInStatefulState extends State<EmailSignInStateful> {
       decoration: InputDecoration(
         labelText: 'Password',
         errorText: showErrorText ? widget.invalidPasswordErrorText : null,
-        enabled: _isLoading == false,
+        enabled: model.isLoading! == false,
       ),
       // エンターキーの変更
       textInputAction: TextInputAction.done,
-      onChanged: (password) => _updateState(),
+      onChanged: (password) => widget.bloc.updateWith(password: password, submitted: true),
     );
   }
 
-  TextField _buildEmailTextField() {
-    bool showErrorText = _submitted && !widget.emailValidator.isValid(_email);
+  TextField _buildEmailTextField(EmailSignInModel model) {
+    bool showErrorText =
+        model.submitted! && !widget.emailValidator.isValid(model.email!);
     return TextField(
       controller: _emailController,
       focusNode: _emailFocusNode,
-      onEditingComplete: _emailEditingComplete,
+      onEditingComplete: () => _emailEditingComplete(model),
       decoration: InputDecoration(
         labelText: 'Email',
         hintText: 'test@test.com',
         errorText: showErrorText ? widget.invalidEmailErrorText : null,
-        enabled: _isLoading == false,
+        enabled: model.isLoading == false,
       ),
       // 予測変換を表示しない。
       autocorrect: false,
@@ -166,20 +155,26 @@ class _EmailSignInStatefulState extends State<EmailSignInStateful> {
       keyboardType: TextInputType.emailAddress,
       // エンターキーの変更
       textInputAction: TextInputAction.next,
-      onChanged: (email) => _updateState(),
+      onChanged: (email) => widget.bloc.updateWith(email: email, submitted: true),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: _buildChildren(),
-      ),
-    );
+    return StreamBuilder<EmailSignInModel>(
+        stream: widget.bloc.modelStream,
+        initialData: EmailSignInModel(),
+        builder: (context, snapshot) {
+          final EmailSignInModel? model = snapshot.data;
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: _buildChildren(model!),
+            ),
+          );
+        });
   }
 
   void _updateState() {
