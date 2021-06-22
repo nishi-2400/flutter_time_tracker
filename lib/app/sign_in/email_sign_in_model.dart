@@ -1,7 +1,9 @@
 // フォームタイプを管理
+import 'package:flutter_time_tracker/app/sign_in/validators.dart';
+
 enum EmailSignInFormType { signIn, register }
 
-class EmailSignInModel {
+class EmailSignInModel with EmailAndPasswordValidators {
   EmailSignInModel({
     this.email = '',
     this.password = '',
@@ -15,6 +17,36 @@ class EmailSignInModel {
   final EmailSignInFormType? formType;
   final bool? isLoading;
   final bool? submitted;
+
+  String get primaryButtonText {
+    return formType == EmailSignInFormType.signIn
+        ? 'Sign in'
+        : 'Create an account';
+  }
+
+  String get secondaryButtonText {
+    return formType == EmailSignInFormType.signIn
+        ? 'Need an account? Register'
+        : 'Have an account? Sign In';
+  }
+
+  bool get canSubmit {
+    return emailValidator.isValid(email!) &&
+        passwordValidator.isValid(password!) &&
+        !isLoading!;
+  }
+
+  String? get passwordErrorText {
+    bool showErrorText =
+        submitted! && !passwordValidator.isValid(password!);
+    return showErrorText ? invalidPasswordErrorText : null;
+  }
+
+  String? get emailErrorText {
+    bool showErrorText =
+        submitted! && !emailValidator.isValid(email!);
+    return showErrorText ? invalidPasswordErrorText : null;
+  }
 
   EmailSignInModel copyWith({
     String? email,
@@ -31,4 +63,4 @@ class EmailSignInModel {
       submitted: submitted ?? this.submitted,
     );
   }
-}
+}}
