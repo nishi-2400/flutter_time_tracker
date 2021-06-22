@@ -2,15 +2,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_time_tracker/app/sign_in/email_sign_in_bloc.dart';
 import 'package:flutter_time_tracker/app/sign_in/email_sign_in_model.dart';
-import 'package:flutter_time_tracker/app/sign_in/validators.dart';
 import 'package:flutter_time_tracker/common_widgets/form_submit_button.dart';
 import 'package:flutter_time_tracker/common_widgets/show_exception_alert_dialog.dart';
 import 'package:flutter_time_tracker/services/auth.dart';
 import 'package:provider/provider.dart';
 
 // with で mixin
-class EmailSignInBlocBased extends StatefulWidget
-    with EmailAndPasswordValidators {
+class EmailSignInBlocBased extends StatefulWidget {
   EmailSignInBlocBased({Key? key, required this.bloc}) : super(key: key);
   final EmailSignInBloc bloc;
 
@@ -66,60 +64,38 @@ class _EmailSignInBlocBasedState extends State<EmailSignInBlocBased> {
 
   // フォーカスの制御
   void _emailEditingComplete(EmailSignInModel model) {
-    final newFocus = widget.emailValidator.isValid(model.email!)
+    final newFocus = model.emailValidator.isValid(model.email!)
         ? _passwordFocusNode
         : _emailFocusNode;
     FocusScope.of(context).requestFocus(newFocus);
   }
 
   // ステートの制御
-  void _toggleFormType(EmailSignInModel model) {
-    widget.bloc.updateWith(
-      email: '',
-      password: '',
-      formType: model.formType == EmailSignInFormType.signIn
-          ? EmailSignInFormType.register
-          : EmailSignInFormType.signIn,
-      isLoading: false,
-      submitted: false,
-    );
-
+  void _toggleFormType() {
+    widget.bloc.toggleFormType();
     _emailController.clear();
     _passwordController.clear();
   }
 
   List<Widget> _buildChildren(EmailSignInModel model) {
-    // ボタンの表示内容の制御
-    final primaryText = model.formType == EmailSignInFormType.signIn
-        ? 'Sign in'
-        : 'Create an account';
-    final secondaryText = model.formType == EmailSignInFormType.signIn
-        ? 'Need an account? Register'
-        : 'Have an account? Sign In';
-    // submitボタンの制御
-    bool submitEnabled = widget.emailValidator.isValid(model.email!) &&
-        widget.passwordValidator.isValid(model.password!) &&
-        !model.isLoading!;
-
     return [
       _buildEmailTextField(model),
       SizedBox(height: 8.0),
       _buildPasswordTextField(model),
       SizedBox(height: 8.0),
       FormSubmitButton(
-          text: primaryText, onPressed: submitEnabled ? _submit : null),
+          text: model.primaryButtonText,
+          onPressed: model.canSubmit ? _submit : null),
       SizedBox(height: 8.0),
       // フォームタイプの切り替え
       FlatButton(
-        onPressed: !model.isLoading! ? () => _toggleFormType(model) : null,
-        child: Text(secondaryText),
+        onPressed: !model.isLoading! ? () => _toggleFormType() : null,
+        child: Text(model.secondaryButtonText),
       ),
     ];
   }
 
   TextField _buildPasswordTextField(EmailSignInModel model) {
-    bool showErrorText =
-        model.submitted! && !widget.passwordValidator.isValid(model.password!);
     return TextField(
       controller: _passwordController,
       focusNode: _passwordFocusNode,
@@ -127,18 +103,16 @@ class _EmailSignInBlocBasedState extends State<EmailSignInBlocBased> {
       onEditingComplete: _submit,
       decoration: InputDecoration(
         labelText: 'Password',
-        errorText: showErrorText ? widget.invalidPasswordErrorText : null,
+        errorText: model.passwordErrorText,
         enabled: model.isLoading! == false,
       ),
       // エンターキーの変更
       textInputAction: TextInputAction.done,
-      onChanged: (password) => widget.bloc.updateWith(password: password, submitted: true),
+      onChanged: widget.bloc.updatePassword,
     );
   }
 
   TextField _buildEmailTextField(EmailSignInModel model) {
-    bool showErrorText =
-        model.submitted! && !widget.emailValidator.isValid(model.email!);
     return TextField(
       controller: _emailController,
       focusNode: _emailFocusNode,
@@ -146,7 +120,7 @@ class _EmailSignInBlocBasedState extends State<EmailSignInBlocBased> {
       decoration: InputDecoration(
         labelText: 'Email',
         hintText: 'test@test.com',
-        errorText: showErrorText ? widget.invalidEmailErrorText : null,
+        errorText: model.emailErrorText,
         enabled: model.isLoading == false,
       ),
       // 予測変換を表示しない。
@@ -155,7 +129,7 @@ class _EmailSignInBlocBasedState extends State<EmailSignInBlocBased> {
       keyboardType: TextInputType.emailAddress,
       // エンターキーの変更
       textInputAction: TextInputAction.next,
-      onChanged: (email) => widget.bloc.updateWith(email: email, submitted: true),
+      onChanged: widget.bloc.updateEmail,
     );
   }
 
