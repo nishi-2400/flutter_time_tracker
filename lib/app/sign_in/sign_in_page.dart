@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_time_tracker/app/sign_in/email_sign_in_page.dart';
-import 'package:flutter_time_tracker/app/sign_in/sing_in_bloc.dart';
+import 'package:flutter_time_tracker/app/sign_in/sign_in_manager.dart';
 import 'package:flutter_time_tracker/app/sign_in/social_sing_in_button.dart';
 import 'package:flutter_time_tracker/common_widgets/show_exception_alert_dialog.dart';
 import 'package:flutter_time_tracker/common_widgets/sign_in_button.dart';
@@ -9,18 +9,26 @@ import 'package:flutter_time_tracker/services/auth.dart';
 import 'package:provider/provider.dart';
 
 class SignInPage extends StatelessWidget {
-  const SignInPage({Key? key, required this.bloc}) : super(key: key);
-  final SignInBloc bloc;
+  const SignInPage({Key? key, required this.manager, required this.isLoading})
+      : super(key: key);
+  final SignInManager manager;
+  final bool isLoading;
 
   static Widget create(BuildContext context) {
     final auth = Provider.of<AuthBase>(context, listen: false);
     // Provider: 状態管理_親から子ウィジェットに状態のデータを受け渡す仕組み
-    return Provider<SignInBloc>(
-      // 受け渡すデータをオブジェクトとしてセット_受け取る側でSingInBlocのデータを取得できる
-      create: (_) => SignInBloc(auth: auth),
-      dispose: (_, bloc) => bloc.dispose(),
-      child: Consumer<SignInBloc>(
-        builder: (_, bloc, __) => SignInPage(bloc: bloc),
+    return ChangeNotifierProvider<ValueNotifier<bool>>(
+      create: (_) => ValueNotifier<bool>(false),
+      child: Consumer<ValueNotifier<bool>>(
+        // isLoadingの値が変わるたびにビルトされる
+        builder: (_, isLoading, __) => Provider<SignInManager>(
+          // 受け渡すデータをオブジェクトとしてセット_受け取る側でSingInBlocのデータを取得できる
+          create: (_) => SignInManager(auth: auth, isLoading: isLoading),
+          child: Consumer<SignInManager>(
+            builder: (_, manager, __) =>
+                SignInPage(manager: manager, isLoading: isLoading.value),
+          ),
+        ),
       ),
     );
   }
@@ -40,7 +48,7 @@ class SignInPage extends StatelessWidget {
 
   Future<void> _signInAnonymously(BuildContext context) async {
     try {
-      await bloc.signInAnonymously();
+      await manager.signInAnonymously();
     } on Exception catch (e) {
       _showSignInError(context, e);
     }
@@ -48,7 +56,7 @@ class SignInPage extends StatelessWidget {
 
   Future<void> _signInWithGoogle(BuildContext context) async {
     try {
-      await bloc.signInWithGoogle();
+      await manager.signInWithGoogle();
     } on Exception catch (e) {
       _showSignInError(context, e);
     }
@@ -56,7 +64,7 @@ class SignInPage extends StatelessWidget {
 
   Future<void> _signInWithFacebook(BuildContext context) async {
     try {
-      await bloc.signInWithFacebook();
+      await manager.signInWithFacebook();
     } on Exception catch (e) {
       _showSignInError(context, e);
     }
@@ -80,19 +88,12 @@ class SignInPage extends StatelessWidget {
         elevation: 10,
       ),
       // StreamBuilder:イベントの監視を行うことができる_bodyのみイベントを監視し、それに応じてウィジェットの状態を更新する
-      body: StreamBuilder<bool>(
-          stream: bloc.isLoadingStream, // 監視対象のストリームを指定
-          initialData: false,
-          // builder: イベントを監視し。それによってrebuildを行う対象ウィジェットを設定
-          builder: (context, snapshot) {
-            // snapshot.data : イベントで受け取ったデータを元にウィジェットをrebuildする
-            return _buildContent(context, snapshot.data!);
-          }),
+      body: _buildContent(context),
       backgroundColor: Colors.grey[100],
     );
   }
 
-  Widget _buildContent(BuildContext context, bool isLoading) {
+  Widget _buildContent(BuildContext context) {
     return Padding(
       // child配下のwidgetのpaddingを指定
       padding: EdgeInsets.all(16.0),
@@ -102,7 +103,7 @@ class SignInPage extends StatelessWidget {
         children: [
           SizedBox(
             height: 50.0,
-            child: _buildHeader(isLoading),
+            child: _buildHeader(),
           ),
           SizedBox(height: 48.0),
           SocialSignInButton(
@@ -146,7 +147,7 @@ class SignInPage extends StatelessWidget {
   }
 
   // ローディング用のウィジェット
-  Widget _buildHeader(bool isLoading) {
+  Widget _buildHeader() {
     if (isLoading) {
       return Center(
         child: CircularProgressIndicator(),
