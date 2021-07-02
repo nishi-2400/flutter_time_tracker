@@ -3,18 +3,36 @@ import 'package:flutter_time_tracker/app/home/models/job.dart';
 import 'package:flutter_time_tracker/services/api_path.dart';
 
 abstract class Database {
-  // Job登録
   Future<void> createJob(Job job);
+
+  Stream<List<Job?>> jobsStream();
 }
 
 class FirestoreDatabase implements Database {
   FirestoreDatabase({required this.uid}) : assert(uid != null);
   final String uid;
 
-  Future<void> createJob(Job job) => _setData(
-    path: ApiPath.job(uid, 'job_abc'),
-    data: job.toMap(),
-  );
+  Future<void> createJob(Job job) =>
+      _setData(
+        path: ApiPath.job(uid, 'job_abc'),
+        data: job.toMap(),
+      );
+
+  //Job一覧データ
+  Stream<List<Job?>> jobsStream() {
+    final path = ApiPath.jobs(uid);
+    final reference = FirebaseFirestore.instance.collection(path);
+    final snapshots = reference.snapshots();
+    return snapshots.map((snapshot) =>
+        snapshot.docs.map((snapshot) {
+          final data = snapshot.data();
+          return data != null ? Job(
+            name: data['name'],
+            ratePerHour: data['ratePerHour'],
+          ) : null;
+        }).toList()
+    );
+  }
 
   Future<void> _setData({String? path, Map<String, dynamic>? data}) async {
     final reference = FirebaseFirestore.instance.doc(path!);
