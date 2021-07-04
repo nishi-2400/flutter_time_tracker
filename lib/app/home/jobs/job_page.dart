@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_time_tracker/app/home/jobs/add_job_page.dart';
 import 'package:flutter_time_tracker/app/home/models/job.dart';
 import 'package:flutter_time_tracker/common_widgets/show_alert_dialog.dart';
 import 'package:flutter_time_tracker/common_widgets/show_exception_alert_dialog.dart';
@@ -51,24 +52,16 @@ class JobPage extends StatelessWidget {
       body: _buildContents(context),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () => _createJob(context),
+        onPressed: () => AddJobPage.show(context),
       ),
     );
   }
 
-  Future<void> _createJob(BuildContext context) async {
-    try {
-      final database = Provider.of<Database>(context, listen: false);
-      database.createJob(Job(name: 'Blogging', ratePerHour: 10));
-    } on FirebaseException catch (e) {
-      showExceptionAlertDialog(context,
-          title: 'Operation failed', exception: e);
-    }
-  }
-
   Widget _buildContents(BuildContext context) {
     final database = Provider.of<Database>(context, listen: false);
+    // StreamBuilder：stream上にデータが流れる度にウィジェットとリビルドする
     return StreamBuilder<List<Job?>>(
+        // stream: 対象のstream
         stream: database.jobsStream(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
