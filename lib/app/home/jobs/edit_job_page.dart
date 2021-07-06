@@ -6,28 +6,37 @@ import 'package:flutter_time_tracker/common_widgets/show_exception_alert_dialog.
 import 'package:flutter_time_tracker/services/database.dart';
 import 'package:provider/provider.dart';
 
-class AddJobPage extends StatefulWidget {
-  const AddJobPage({Key? key, required this.database}) : super(key: key);
+class EditJobPage extends StatefulWidget {
+  const EditJobPage({Key? key, required this.database, this.job}) : super(key: key);
   final Database database;
-
-  static Future<void> show(BuildContext context) async {
+  final Job? job;
+  static Future<void> show(BuildContext context, {Job? job}) async {
     final database = Provider.of<Database>(context, listen: false);
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => AddJobPage(database: database),
+        builder: (context) => EditJobPage(database: database, job: job),
         fullscreenDialog: true,
       ),
     );
   }
 
   @override
-  _AddJobPageState createState() => _AddJobPageState();
+  _EditJobPageState createState() => _EditJobPageState();
 }
 
-class _AddJobPageState extends State<AddJobPage> {
+class _EditJobPageState extends State<EditJobPage> {
   final _formKey = GlobalKey<FormState>();
   String? _name;
   int? _ratePerHour;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.job != null) {
+      _name = widget.job!.name;
+      _ratePerHour = widget.job!.ratePerHour;
+    }
+  }
 
   bool _validateAndSaveForm() {
     final form = _formKey.currentState;
@@ -42,7 +51,10 @@ class _AddJobPageState extends State<AddJobPage> {
     if (_validateAndSaveForm()) {
       try {
         final jobs = await widget.database.jobsStream().first;
-        final allNames = jobs.map((job) => job!.name);
+        final allNames = jobs.map((job) => job!.name).toList();
+        if (widget.job != null) {
+          allNames.remove(widget.job!.name);
+        }
         if (allNames.contains(_name)) {
           showAlertDialog(
             context,
@@ -51,8 +63,9 @@ class _AddJobPageState extends State<AddJobPage> {
             defaultActionText: 'OK',
           );
         } else {
-          final job = Job(name: _name!, ratePerHour: _ratePerHour!);
-          await widget.database.createJob(job);
+          final id = widget.job?.id ?? documentIdFromCurrentDate();
+          final job = Job(id: id, name: _name!, ratePerHour: _ratePerHour!);
+          await widget.database.setJob(job);
           Navigator.of(context).pop();
         }
       } on FirebaseException catch (e) {
@@ -67,7 +80,7 @@ class _AddJobPageState extends State<AddJobPage> {
     return Scaffold(
       appBar: AppBar(
         elevation: 2.0,
-        title: Text('New Job'),
+        title: Text(widget.job == null ? 'New Job' : 'Edit Job'),
         actions: [
           FlatButton(
             onPressed: _submit,
@@ -113,11 +126,13 @@ class _AddJobPageState extends State<AddJobPage> {
   List<Widget> _buildFormChildren() {
     return [
       TextFormField(
+        initialValue: _name,
         decoration: InputDecoration(labelText: 'Job Name'),
         validator: (value) => value!.isNotEmpty ? null : 'Name can\'t be empty',
         onSaved: (value) => _name = value,
       ),
       TextFormField(
+        initialValue: _ratePerHour == null ? null : '$_ratePerHour',
         decoration: InputDecoration(labelText: 'Rate Per Hour'),
         onSaved: (value) => _ratePerHour = int.tryParse(value!) ?? 0,
         keyboardType:
