@@ -1,9 +1,8 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_time_tracker/app/home/jobs/add_job_page.dart';
+import 'package:flutter_time_tracker/app/home/jobs/edit_job_page.dart';
+import 'package:flutter_time_tracker/app/home/jobs/job_list_tile.dart';
 import 'package:flutter_time_tracker/app/home/models/job.dart';
 import 'package:flutter_time_tracker/common_widgets/show_alert_dialog.dart';
-import 'package:flutter_time_tracker/common_widgets/show_exception_alert_dialog.dart';
 import 'package:flutter_time_tracker/services/auth.dart';
 import 'package:flutter_time_tracker/services/database.dart';
 import 'package:provider/provider.dart';
@@ -52,7 +51,7 @@ class JobPage extends StatelessWidget {
       body: _buildContents(context),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () => AddJobPage.show(context),
+        onPressed: () => EditJobPage.show(context),
       ),
     );
   }
@@ -66,7 +65,12 @@ class JobPage extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             final jobs = snapshot.data;
-            final children = jobs!.map((job) => Text(job!.name)).toList();
+            final children = jobs!
+                .map((job) => JobListTile(
+                      job: job!,
+                      onTap: () => EditJobPage.show(context, job: job),
+                    ))
+                .toList();
             return ListView(children: children);
           }
           if (snapshot.hasError) {
