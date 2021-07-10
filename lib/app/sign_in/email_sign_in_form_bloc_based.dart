@@ -150,8 +150,4 @@ class _EmailSignInBlocBasedState extends State<EmailSignInBlocBased> {
           );
         });
   }
-
-  void _updateState() {
-    setState(() {});
-  }
 }
