@@ -1,10 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_time_tracker/app/home/home_page.dart';
 import 'package:flutter_time_tracker/app/sign_in/sign_in_page.dart';
 import 'package:flutter_time_tracker/services/auth.dart';
 import 'package:flutter_time_tracker/services/database.dart';
 import 'package:provider/provider.dart';
-import 'home/jobs/job_page.dart';
 
 class LandingPage extends StatelessWidget {
   @override
@@ -18,7 +18,8 @@ class LandingPage extends StatelessWidget {
         // connectionState : 通信状況を取得
         if (snapshot.connectionState == ConnectionState.active) {
           final User? user = snapshot.data;
-          print(user?.uid);
+          final userId = user?.uid;
+          print('user:$userId');
           if (user == null) {
             // サインイン関連の状態を管理するProviderを生成
             return SignInPage.create(context);
@@ -26,7 +27,7 @@ class LandingPage extends StatelessWidget {
             // Jobsページの親としてProviderをセット
             return Provider<Database>(
                 create: (_) => FirestoreDatabase(uid: user.uid),
-                child: JobPage()
+                child: HomePage()
             );
           }
         }
