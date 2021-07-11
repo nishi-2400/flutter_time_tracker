@@ -6,11 +6,14 @@ import 'package:flutter_time_tracker/common_widgets/show_exception_alert_dialog.
 import 'package:flutter_time_tracker/services/database.dart';
 
 class EditJobPage extends StatefulWidget {
-  const EditJobPage({Key? key, required this.database, this.job}) : super(key: key);
+  const EditJobPage({Key? key, required this.database, this.job})
+      : super(key: key);
   final Database database;
   final Job? job;
-  static Future<void> show(BuildContext context, {Database? database, Job? job}) async {
-    await Navigator.of(context).push(
+
+  static Future<void> show(BuildContext context,
+      {Database? database, Job? job}) async {
+    await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (context) => EditJobPage(database: database!, job: job),
         fullscreenDialog: true,
@@ -48,7 +51,9 @@ class _EditJobPageState extends State<EditJobPage> {
   Future<void> _submit() async {
     if (_validateAndSaveForm()) {
       try {
-        final jobs = await widget.database.jobsStream().first;
+        final jobs = await widget.database
+            .jobsStream()
+            .first;
         final allNames = jobs.map((job) => job.name).toList();
         if (widget.job != null) {
           allNames.remove(widget.job!.name);
@@ -134,7 +139,7 @@ class _EditJobPageState extends State<EditJobPage> {
         decoration: InputDecoration(labelText: 'Rate Per Hour'),
         onSaved: (value) => _ratePerHour = int.tryParse(value!) ?? 0,
         keyboardType:
-            TextInputType.numberWithOptions(signed: false, decimal: false),
+        TextInputType.numberWithOptions(signed: false, decimal: false),
       ),
     ];
   }
