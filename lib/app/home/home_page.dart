@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_time_tracker/app/home/account/account_page.dart';
 import 'package:flutter_time_tracker/app/home/cupertino_home_scaffold.dart';
+import 'package:flutter_time_tracker/app/home/entries/entries_page.dart';
+import 'package:flutter_time_tracker/app/home/job_entries/entry_page.dart';
 import 'package:flutter_time_tracker/app/home/jobs/job_page.dart';
 import 'package:flutter_time_tracker/app/home/tab_item.dart';
 
@@ -20,9 +22,9 @@ class _HomePageState extends State<HomePage> {
 
   Map<TabItem, WidgetBuilder> get widgetBuilders {
     return {
-      TabItem.jobs: (_) => JobPage(),
-      TabItem.entries: (_) => Container(),
-      TabItem.account: (_) => AccountPage(),
+      TabItem.jobs: (context) => JobPage(),
+      TabItem.entries: (context) => EntriesPage.create(context),
+      TabItem.account: (context) => AccountPage(),
     };
   }
 
